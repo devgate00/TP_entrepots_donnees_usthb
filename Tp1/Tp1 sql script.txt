@@ -1,0 +1,291 @@
+-*-*-*-*-*
+create User master identified by glt
+
+grant all privileges to master;
+ 
+ *-*-*-*-*-*-*
+ /*1.	Passage MCD => modèle relationnel :
+On utilisant les règles suivantes : 
+1.1.	Règle 1
+Toute entité devient une relation ayant pour clé primaire son identifiant. Chaque propriété se
+transforme en attribut.
+1.2.	Règle 2
+Toute association hiérarchique (de type [1, n]) se traduit par une clé étrangère. La clé primaire
+correspondant à l'entité père (côté n) migre comme clé étrangère dans la relation correspondant à
+l'entité fils (côté 1)
+1.3.	Règle 3
+Toute association non hiérarchique (de type [n, n] ou de dimension > 2) devient une relation. La
+clé primaire est formée par la concaténation (juxtaposition) lensemble des identifiants des entités
+reliées. Toutes les propriétés éventuelles deviennent des attributs qui ne peuvent pas faire partie de la
+clé.*/
+-*-*-*-*-*-*
+/*creation des table*/
+
+
+//Wilaya 
+create table wilaya(
+codewilaya number(10),
+nomwilaya varchar(50),
+constraint pk_wilaya primary key (codewilaya));
+
+//ville 
+
+create table ville(
+codeville number(10),
+nomville varchar(50),
+codewilaya number(10),
+constraint pk_ville primary key (codeville),
+constraint fk_wilaya foreign key (codewilaya) references wilaya(codewilaya) );
+
+//Specialté
+
+create table specialite(
+codespec number(10),
+nomspec varchar(50),
+constraint pk_specialite primary key (codespec));
+
+
+//Medecin 
+
+
+create table medecin(
+codemed number(10),
+nommed varchar(50),
+codespec number(10),
+constraint pk_med primary key (codemed),
+constraint fk_spec foreign key (codespec) references specialite (codespec) );
+
+//Producteur
+
+create table Producteur(
+codeprod number(10),
+nomsprod varchar(50),
+constraint pk_prod primary key (codeprod));
+
+// Boite_Médicament
+
+create table Boite_Medicament(
+codeboite number(10),
+prixboite varchar(10),
+prixref varchar(10),
+codeprod number(10),
+codemedic number(10),
+constraint pk_boite primary key (codeboite),
+constraint fk_prodb foreign key (codeprod) references producteur  (codeprod) ,
+constraint fk_medic foreign key (codemedic) references medicament (codemedic) );
+
+
+//Pharmacie
+
+create table pharmacie(
+codeph number(10),
+nomph  varchar(50),
+codeville number(10),
+constraint pk_pharm primary key (codeph),
+constraint fk_villep foreign key (codeville) references ville(codeville) );
+
+//Patient
+create table patient(
+codepat number(10),
+nompat  varchar(50),
+dn_pat date,
+sexe_p number(1),
+constraint pk_patient primary key (codepat));
+
+//Medicament
+
+create table medicament (
+codemedic number(10),
+nommedic varchar(50),
+generique number(1),
+codetpmed number(10),
+constraint pk_medic primary key (codemedic),
+constraint fk_typemed foreign key (codetpmed) references type_medicament (codetpmed) );
+
+// type_medicament
+
+create table type_medicament (
+codetpmed number(10),
+typemed number(5),
+constraint pk_typemedic primary key (codetpmed));
+
+
+//Ordonnace(CodeOrdonnace,DateOrdonnace,CodePharmacie*,CodeMedecin*,codePatient*)
+
+create table ordonnace (
+codeord number(10),
+dateord date,
+codeph number(10),
+codemed number(10),
+codepat number(10),
+constraint pk_ord primary key (codeord),
+constraint fk_pharmo foreign key (codeph) references pharmacie  (codeph) ,
+constraint fk_medo foreign key (codemed) references medecin  (codemed), 
+constraint fk_pato foreign key (codepat) references patient  (codepat) );
+
+*-*-*-*-******-*-*--*---*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-*-*-*-
+
+
+/*alimentation des sources de donnée */
+*************
+
+ // Remplir la table spécialité :
+ DECLARE
+ v char (50);
+ I number(10);
+ begin for i in 1..8 loop
+ Select dbms_random.string('U', 8) into v from dual;
+ insert into specialite values(i,v); 
+ end loop;
+ commit; 
+ end;
+ /
+// Remplir la table Medecin:
+
+ DECLARE
+ v char (50);
+ w number(10);
+ I number(10);
+ begin for i in 1..17600 loop
+ Select dbms_random.string('U', 15) into v from dual;
+ Select floor(dbms_random.value(1, 8.9)) into w from dual;
+ insert into medecin values(i,v,w); 
+ end loop;
+ commit; 
+ end;
+ /
+// Remplir la table Patient:
+ DECLARE
+ I number(10);
+  V char (50);
+ D date;
+ W number ;
+ begin for i in 1..150566 loop
+ Select dbms_random.string('U', 10) into V from dual;
+ Select to_date( Trunc( dbms_RANDOM.VALUE(TO_CHAR(DATE '1950-01-01','J') ,TO_CHAR(DATE '2010-12-31','J') ) ),'J' ) into D FROM DUAL;
+ Select dbms_random.value(1,2.9) into W from dual;
+ insert into patient values(I,V,D,W); 
+ end loop;
+ commit; 
+ end;
+ /
+
+
+ // Remplir la table Wilaya:
+ DECLARE
+ v char (50);
+ I number(10);
+ begin for i in 1..58 loop
+ Select dbms_random.string('U', 8) into v from dual;
+ insert into wilaya values(i,v); 
+ end loop;
+ commit; 
+ end;
+ /
+
+
+
+
+ // Remplir la table Ville:
+ DECLARE
+ v char (50);
+ w number(10);
+ I number(10);
+ begin for i in 1..8000 loop
+ Select dbms_random.string('U', 10) into v from dual;
+ Select floor(dbms_random.value(1, 58.9)) into w from dual;
+ insert into ville values(i,v,w); 
+ end loop;
+ commit; 
+ end;
+ /
+ // Remplir la table TypeMédicament:
+
+ DECLARE
+ v number(10);
+j number(5);
+ I number;
+ 
+ begin for i in 1..10 loop
+ Select dbms_random.value(10,10.9) into v from dual;
+
+  
+ Select dbms_random.value(5,10.9) into j from dual;
+
+ insert into type_medicament values(i,v); 
+ end loop;
+ commit; 
+ end;
+ /
+
+ 
+ /
+//producteur 
+ DECLARE
+v number(10);
+j char(50);
+I number;
+ 
+ begin for i in 1..120 loop
+
+ Select dbms_random.value(10,120.9) into v from dual;
+ Select dbms_random.string('U', 8) into j from dual;
+ insert into Producteur values(i,v,j); 
+ end loop;
+ commit; 
+ end;
+ /
+// Remplir la table medicament:
+ DECLARE
+ v char (50);
+ w number(10);   
+ I number;
+ k number(1);
+ begin for i in 1..5300 loop
+ Select dbms_random.string('U', 15) into v from dual;
+ Select floor(dbms_random.value(10, 10.9)) into k from dual;
+ Select floor(dbms_random.value(1, 1.9)) into w from dual;
+ insert into medicament values(i,v,k,w); 
+ end loop;
+ commit; 
+ end;
+ /
+
+
+
+
+// Remplir la table Pharmacie:
+ DECLARE
+ v char (50);
+ w number(10);
+ j number(10);
+ i number; 
+ begin for i in 1.. 25314 loop
+ Select dbms_random.string('U', 10) into v from dual;
+ Select floor(dbms_random.value(1, 8000.9)) into w from dual;
+  Select floor(dbms_random.value(1, 25314.9)) into w from dual;
+
+ insert into pharmacie values(i,v,w); 
+ end loop;
+ commit; 
+ end;
+ /
+
+
+ // Remplir la table Ordonnance:
+ DECLARE
+ V number(10);
+ I number(10);
+ D date;
+ W number(10);
+ S number(10);
+ begin for i in 1.. 956250 loop
+ SELECT TO_DATE( TRUNC( DBMS_RANDOM.VALUE(TO_CHAR(DATE '2018-01-01','J') ,TO_CHAR(DATE '2021-12-31','J') ) ),'J' ) into d FROM DUAL; 
+ Select floor(dbms_random.value(1, 17600.9)) into v from dual;
+ Select floor(dbms_random.value(1, 25314.9)) into w from dual;
+ Select floor(dbms_random.value(1, 150566.9)) into s from dual;
+ insert into ordonnace values(i,d,v,w,s); 
+ end loop;
+ commit; 
+ end;
+ /
